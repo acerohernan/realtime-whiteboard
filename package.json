@@ -1,0 +1,11 @@
+{
+  "name": "whiteboard-monorepo",
+  "version": "1.0.0",
+  "description": "This is the main monorepo of whiteboard monorepo",
+  "scripts": {
+    "frontend": "pnpm --filter=frontend"
+  },
+  "keywords": [],
+  "author": "acerohernan",
+  "license": "MIT"
+}
