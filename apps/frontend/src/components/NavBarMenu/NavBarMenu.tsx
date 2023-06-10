@@ -125,9 +125,8 @@ const NavBarMenu = () => {
       <MenuWrapper>
         <MenuContainer>
           {menuItems.map((item) => (
-            <Tooltip content={item.label}>
+            <Tooltip content={item.label} key={item.label}>
               <MenuItem
-                key={item.label}
                 onClick={handleSelect(item)}
                 status={
                   selectedItem.label === item.label ? "active" : undefined

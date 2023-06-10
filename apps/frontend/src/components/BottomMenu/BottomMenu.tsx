@@ -88,19 +88,18 @@ const BottomMenu = () => {
           }}
         >
           {menuItems.map((item) => (
-            <>
+            <div key={item.label}>
               {item.label === "Settings" && <Divider />}
               <MenuItem
                 onClick={handleSelect(item)}
                 status={
                   item.label === selectedOption.label ? "active" : undefined
                 }
-                key={item.label}
               >
                 {item.icon}
                 {item.label}
               </MenuItem>
-            </>
+            </div>
           ))}
         </MenuWrapper>
       </div>

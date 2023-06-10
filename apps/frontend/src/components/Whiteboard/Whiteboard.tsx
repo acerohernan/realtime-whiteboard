@@ -11,6 +11,7 @@ import {
   Undo2Icon,
 } from "lucide-react";
 import { Tooltip } from "../Tooltip";
+import React from "react";
 
 const Wrapper = styled("div", {
   backgroundColor: "#F8F6F4",
@@ -31,6 +32,7 @@ const Screen = styled("div", {
   width: "100%",
   height: "100%",
   backgroundColor: "$gray500",
+  position: "relative",
 
   "@bp2": {
     height: "70vh",
@@ -65,47 +67,114 @@ const ToolButton = styled("button", {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
+  border: "1px solid White",
+  transition: "0.2s all ease-in-out",
 
   "&:hover": {
     backgroundColor: "rgba(0,0,0,0.04)",
   },
+
+  variants: {
+    state: {
+      active: {
+        borderColor: "black",
+      },
+    },
+  },
 });
 
+const CursorDot = styled("div", {
+  pointerEvents: "none",
+  position: "absolute",
+  top: "50%",
+  left: "50%",
+  transform: "translate(-50%, -50%)",
+  borderRadius: "50%",
+  opacity: 1,
+  transition: "opacity 0.3s ease-in-out, transform 0.3s ease-in-out",
+  width: "8px",
+  height: "8px",
+  backgroundColor: "Red",
+});
+
+type ToolItem = {
+  icon: React.ReactNode;
+  label: string;
+  cursorType: string;
+};
+
+const toolItems: Record<string, ToolItem> = {
+  Pointer: {
+    label: "Pointer",
+    icon: <PointerIcon />,
+    cursorType: "pointer",
+  },
+  Select: {
+    label: "Select",
+    icon: <MousePointer2 />,
+    cursorType: "default",
+  },
+  Wire: {
+    label: "Wire",
+    icon: <SplineIcon />,
+    cursorType: "crosshair",
+  },
+  Shape: {
+    label: "Shape",
+    icon: <SquareIcon />,
+    cursorType: "crosshair",
+  },
+  Text: {
+    label: "Text",
+    icon: <TypeIcon />,
+    cursorType: "crosshair",
+  },
+  "Clean all": {
+    label: "Clean all",
+    icon: <SparklesIcon />,
+    cursorType: "default",
+  },
+};
+
 const Whiteboard = () => {
+  const [toolPressed, setToolPressed] = React.useState<string>("");
+
+  const canvasRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (!canvasRef.current) return;
+
+    if (!toolPressed) {
+      canvasRef.current.style.cursor = "default";
+      return;
+    }
+
+    const tool = toolItems[toolPressed];
+
+    if (!tool) return;
+
+    canvasRef.current.style.cursor = tool.cursorType;
+  }, [toolPressed]);
+
+  const handleSelectTool = (toolName: string) => () => {
+    if (toolPressed === toolName) return setToolPressed("");
+
+    setToolPressed(toolName);
+  };
+
   return (
     <Wrapper>
       <ToolContainer>
-        <Tooltip content="Pointer">
-          <ToolButton>
-            <PointerIcon />
-          </ToolButton>
-        </Tooltip>
-        <Tooltip content="Select">
-          <ToolButton>
-            <MousePointer2 />
-          </ToolButton>
-        </Tooltip>
-        <Tooltip content="Wire">
-          <ToolButton>
-            <SplineIcon />
-          </ToolButton>
-        </Tooltip>
-        <Tooltip content="Shape">
-          <ToolButton>
-            <SquareIcon />
-          </ToolButton>
-        </Tooltip>
-        <Tooltip content="Text">
-          <ToolButton>
-            <TypeIcon />
-          </ToolButton>
-        </Tooltip>
-
-        <Tooltip content="Clean all">
-          <ToolButton>
-            <SparklesIcon />
-          </ToolButton>
-        </Tooltip>
+        {Object.values(toolItems).map((item) => (
+          <Tooltip content={item.label}>
+            <ToolButton
+              state={toolPressed === item.label ? "active" : undefined}
+              onClick={handleSelectTool(item.label)}
+            >
+              {item.icon}
+            </ToolButton>
+          </Tooltip>
+        ))}
         <Divider />
         <Tooltip content="Undo">
           <ToolButton>
@@ -118,7 +187,7 @@ const Whiteboard = () => {
           </ToolButton>
         </Tooltip>
       </ToolContainer>
-      <Screen>
+      <Screen ref={canvasRef}>
         <Image src="/images/world-map.png" />
       </Screen>
     </Wrapper>
