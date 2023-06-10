@@ -74,7 +74,7 @@ const BottomMenu = () => {
 
   return (
     <Wrapper>
-      {selectedOption.component}
+      <div style={{ padding: "24px" }}>{selectedOption.component}</div>
       <div style={{ display: "flex", alignItems: "center" }}>
         <ButtonWrapper>
           <IconButton tabIndex={1}>{selectedOption.icon}</IconButton>

@@ -8,6 +8,10 @@ export const Wrapper = styled("div", {
   gridTemplateRows: "1fr 60px",
   position: "relative",
   overflowY: "hidden",
+
+  "@bp2": {
+    display: "none",
+  },
 });
 
 export const ButtonWrapper = styled("div", {

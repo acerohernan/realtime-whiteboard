@@ -9,6 +9,6 @@ export const { styled, css, globalCss, keyframes, createTheme } =
       },
     },
     media: {
-      bp1: "(min-width: 480px)",
+      bp2: "(min-width: 840px)",
     },
   });
