@@ -1,5 +1,8 @@
 import { createBrowserRouter } from "react-router-dom";
 import HomeView from "./views/home";
+import WhiteboardView from "./views/whiteboard";
+import KonvaView from "./views/konva";
+import KonvaCreateView from "./views/konva-create";
 
 const router = createBrowserRouter([
   {
@@ -7,8 +10,16 @@ const router = createBrowserRouter([
     element: <HomeView />,
   },
   {
-    path: "login",
-    element: <div>Login</div>,
+    path: "whiteboard",
+    element: <WhiteboardView />,
+  },
+  {
+    path: "konva",
+    element: <KonvaView />,
+  },
+  {
+    path: "konva/create",
+    element: <KonvaCreateView />,
   },
 ]);
 

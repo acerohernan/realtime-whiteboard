@@ -31,6 +31,7 @@ const Wrapper = styled("div", {
 const Screen = styled("div", {
   width: "100%",
   height: "100%",
+  display: "block",
   backgroundColor: "$gray500",
   position: "relative",
 
@@ -38,6 +39,11 @@ const Screen = styled("div", {
     height: "70vh",
     borderRadius: "16px",
   },
+});
+
+const Canvas = styled("canvas", {
+  borderRadius: "inherit",
+  border: "1px solid red",
 });
 
 const Image = styled("img", {
@@ -139,8 +145,87 @@ const toolItems: Record<string, ToolItem> = {
 const Whiteboard = () => {
   const [toolPressed, setToolPressed] = React.useState<string>("");
 
-  const canvasRef = React.useRef<HTMLDivElement>(null);
+  const canvasRef = React.useRef<HTMLCanvasElement>(null);
+  const contextRef = React.useRef<any>(null);
 
+  const [isDrawing, setIsDrawing] = React.useState(false);
+
+  const canvasOffSetX = React.useRef<any>(null);
+  const canvasOffSetY = React.useRef<any>(null);
+  const startX = React.useRef<any>(null);
+  const startY = React.useRef<any>(null);
+
+  /* Canvas drawing */
+  React.useEffect(() => {
+    if (!canvasRef.current) return;
+
+    const canvas = canvasRef.current;
+    canvas.width = 500;
+    canvas.height = 500;
+
+    const context = canvas.getContext("2d");
+
+    if (!context) return;
+
+    context.lineCap = "round";
+    context.strokeStyle = "black";
+    context.lineWidth = 5;
+    contextRef.current = context;
+
+    const canvasOffSet = canvas.getBoundingClientRect();
+
+    canvasOffSetX.current = canvasOffSet.top;
+    canvasOffSetY.current = canvasOffSet.left;
+  }, []);
+
+  const startDrawingRectangle: React.MouseEventHandler<HTMLCanvasElement> = ({
+    nativeEvent,
+  }) => {
+    nativeEvent.preventDefault();
+    nativeEvent.stopPropagation();
+
+    startX.current = nativeEvent.clientX - canvasOffSetX.current;
+    startY.current = nativeEvent.clientY - canvasOffSetY.current;
+
+    setIsDrawing(true);
+  };
+
+  const drawRectangle: React.MouseEventHandler<HTMLCanvasElement> = ({
+    nativeEvent,
+  }) => {
+    if (!isDrawing) return;
+
+    nativeEvent.preventDefault();
+    nativeEvent.stopPropagation();
+
+    const newMouseX = nativeEvent.clientX - canvasOffSetX.current;
+    const newMouseY = nativeEvent.clientY - canvasOffSetX.current;
+
+    const rectWidth = newMouseX - startX.current;
+    const rectHeight = newMouseY - startY.current;
+
+    if (!canvasRef.current) return;
+
+    contextRef.current.clearRect(
+      0,
+      0,
+      canvasRef.current.width,
+      canvasRef.current.height
+    );
+
+    contextRef.current.strokeRect(
+      startX.current,
+      startY.current,
+      rectWidth,
+      rectHeight
+    );
+  };
+
+  const stopDrawingRectangle = () => {
+    setIsDrawing(false);
+  };
+
+  /* Change the cursor when a different tool is selected */
   React.useEffect(() => {
     if (!canvasRef.current) return;
 
@@ -166,7 +251,7 @@ const Whiteboard = () => {
     <Wrapper>
       <ToolContainer>
         {Object.values(toolItems).map((item) => (
-          <Tooltip content={item.label}>
+          <Tooltip content={item.label} key={item.label}>
             <ToolButton
               state={toolPressed === item.label ? "active" : undefined}
               onClick={handleSelectTool(item.label)}
@@ -187,9 +272,17 @@ const Whiteboard = () => {
           </ToolButton>
         </Tooltip>
       </ToolContainer>
-      <Screen ref={canvasRef}>
-        <Image src="/images/world-map.png" />
+      <Screen>
+        <Canvas
+          ref={canvasRef}
+          onMouseDown={startDrawingRectangle}
+          onMouseMove={drawRectangle}
+          onMouseUp={stopDrawingRectangle}
+          onMouseLeave={stopDrawingRectangle}
+        />
+        {/* <Image src="/images/world-map.png" /> */}
       </Screen>
+      <span>Is Drawing?: {isDrawing ? "Yes" : "No"}</span>
     </Wrapper>
   );
 };
