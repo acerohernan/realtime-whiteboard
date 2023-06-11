@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { Tooltip } from "../Tooltip";
 import React from "react";
+import WhiteboardScreen from "./WhiteboardScreen";
 
 const Wrapper = styled("div", {
   backgroundColor: "#F8F6F4",
@@ -26,30 +27,6 @@ const Wrapper = styled("div", {
     height: "100vh",
     padding: "0px 24px",
   },
-});
-
-const Screen = styled("div", {
-  width: "100%",
-  height: "100%",
-  display: "block",
-  backgroundColor: "$gray500",
-  position: "relative",
-
-  "@bp2": {
-    height: "70vh",
-    borderRadius: "16px",
-  },
-});
-
-const Canvas = styled("canvas", {
-  borderRadius: "inherit",
-  border: "1px solid red",
-});
-
-const Image = styled("img", {
-  width: "100%",
-  height: "100%",
-  objectFit: "contain",
 });
 
 const ToolContainer = styled("div", {
@@ -103,148 +80,67 @@ const CursorDot = styled("div", {
   backgroundColor: "Red",
 });
 
-type ToolItem = {
+export type ToolItem = {
   icon: React.ReactNode;
   label: string;
   cursorType: string;
+  type: ToolType;
 };
 
-const toolItems: Record<string, ToolItem> = {
-  Pointer: {
+export type ToolType =
+  | "pointer"
+  | "select"
+  | "line"
+  | "square"
+  | "text"
+  | "eraser";
+
+export const toolItems: Record<ToolType, ToolItem> = {
+  pointer: {
     label: "Pointer",
     icon: <PointerIcon />,
     cursorType: "pointer",
+    type: "pointer",
   },
-  Select: {
+  select: {
     label: "Select",
     icon: <MousePointer2 />,
     cursorType: "default",
+    type: "select",
   },
-  Wire: {
+  line: {
     label: "Wire",
     icon: <SplineIcon />,
     cursorType: "crosshair",
+    type: "line",
   },
-  Shape: {
+  square: {
     label: "Shape",
     icon: <SquareIcon />,
     cursorType: "crosshair",
+    type: "square",
   },
-  Text: {
+  text: {
     label: "Text",
     icon: <TypeIcon />,
     cursorType: "crosshair",
+    type: "text",
   },
-  "Clean all": {
+  eraser: {
     label: "Clean all",
     icon: <SparklesIcon />,
     cursorType: "default",
+    type: "eraser",
   },
 };
 
 const Whiteboard = () => {
-  const [toolPressed, setToolPressed] = React.useState<string>("");
+  const [toolPressed, setToolPressed] = React.useState<ToolType | null>(null);
 
-  const canvasRef = React.useRef<HTMLCanvasElement>(null);
-  const contextRef = React.useRef<any>(null);
+  const handleSelectTool = (toolType: ToolType) => () => {
+    if (toolPressed === toolType) return setToolPressed(null);
 
-  const [isDrawing, setIsDrawing] = React.useState(false);
-
-  const canvasOffSetX = React.useRef<any>(null);
-  const canvasOffSetY = React.useRef<any>(null);
-  const startX = React.useRef<any>(null);
-  const startY = React.useRef<any>(null);
-
-  /* Canvas drawing */
-  React.useEffect(() => {
-    if (!canvasRef.current) return;
-
-    const canvas = canvasRef.current;
-    canvas.width = 500;
-    canvas.height = 500;
-
-    const context = canvas.getContext("2d");
-
-    if (!context) return;
-
-    context.lineCap = "round";
-    context.strokeStyle = "black";
-    context.lineWidth = 5;
-    contextRef.current = context;
-
-    const canvasOffSet = canvas.getBoundingClientRect();
-
-    canvasOffSetX.current = canvasOffSet.top;
-    canvasOffSetY.current = canvasOffSet.left;
-  }, []);
-
-  const startDrawingRectangle: React.MouseEventHandler<HTMLCanvasElement> = ({
-    nativeEvent,
-  }) => {
-    nativeEvent.preventDefault();
-    nativeEvent.stopPropagation();
-
-    startX.current = nativeEvent.clientX - canvasOffSetX.current;
-    startY.current = nativeEvent.clientY - canvasOffSetY.current;
-
-    setIsDrawing(true);
-  };
-
-  const drawRectangle: React.MouseEventHandler<HTMLCanvasElement> = ({
-    nativeEvent,
-  }) => {
-    if (!isDrawing) return;
-
-    nativeEvent.preventDefault();
-    nativeEvent.stopPropagation();
-
-    const newMouseX = nativeEvent.clientX - canvasOffSetX.current;
-    const newMouseY = nativeEvent.clientY - canvasOffSetX.current;
-
-    const rectWidth = newMouseX - startX.current;
-    const rectHeight = newMouseY - startY.current;
-
-    if (!canvasRef.current) return;
-
-    contextRef.current.clearRect(
-      0,
-      0,
-      canvasRef.current.width,
-      canvasRef.current.height
-    );
-
-    contextRef.current.strokeRect(
-      startX.current,
-      startY.current,
-      rectWidth,
-      rectHeight
-    );
-  };
-
-  const stopDrawingRectangle = () => {
-    setIsDrawing(false);
-  };
-
-  /* Change the cursor when a different tool is selected */
-  React.useEffect(() => {
-    if (!canvasRef.current) return;
-
-    if (!toolPressed) {
-      canvasRef.current.style.cursor = "default";
-      return;
-    }
-
-    const tool = toolItems[toolPressed];
-
-    if (!tool) return;
-
-    canvasRef.current.style.cursor = tool.cursorType;
-  }, [toolPressed]);
-
-  const handleSelectTool = (toolName: string) => () => {
-    if (toolPressed === toolName) return setToolPressed("");
-
-    setToolPressed(toolName);
+    setToolPressed(toolType);
   };
 
   return (
@@ -253,8 +149,8 @@ const Whiteboard = () => {
         {Object.values(toolItems).map((item) => (
           <Tooltip content={item.label} key={item.label}>
             <ToolButton
-              state={toolPressed === item.label ? "active" : undefined}
-              onClick={handleSelectTool(item.label)}
+              state={toolPressed === item.type ? "active" : undefined}
+              onClick={handleSelectTool(item.type)}
             >
               {item.icon}
             </ToolButton>
@@ -272,17 +168,7 @@ const Whiteboard = () => {
           </ToolButton>
         </Tooltip>
       </ToolContainer>
-      <Screen>
-        <Canvas
-          ref={canvasRef}
-          onMouseDown={startDrawingRectangle}
-          onMouseMove={drawRectangle}
-          onMouseUp={stopDrawingRectangle}
-          onMouseLeave={stopDrawingRectangle}
-        />
-        {/* <Image src="/images/world-map.png" /> */}
-      </Screen>
-      <span>Is Drawing?: {isDrawing ? "Yes" : "No"}</span>
+      <WhiteboardScreen activeToolType={toolPressed} />
     </Wrapper>
   );
 };

@@ -3,7 +3,12 @@ import { nanoid } from "nanoid";
 import React, { useCallback, useEffect } from "react";
 import { Stage, Layer, Rect, Transformer } from "react-konva";
 
-const Rectangle = ({ shapeProps, isSelected, onSelect, onChange }: any) => {
+export const Rectangle = ({
+  shapeProps,
+  isSelected,
+  onSelect,
+  onChange,
+}: any) => {
   const shapeRef = React.useRef<any>();
   const trRef = React.useRef<any>(null);
 
