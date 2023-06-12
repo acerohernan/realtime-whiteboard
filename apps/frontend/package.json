@@ -19,7 +19,8 @@
     "react-dom": "^18.2.0",
     "react-konva": "^18.2.9",
     "react-router-dom": "^6.12.1",
-    "react-use-measure": "^2.1.1"
+    "react-use-measure": "^2.1.1",
+    "use-image": "^1.1.0"
   },
   "devDependencies": {
     "@types/react": "^18.0.37",

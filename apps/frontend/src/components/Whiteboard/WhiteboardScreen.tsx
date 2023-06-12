@@ -1,11 +1,11 @@
 import { styled } from "@/theme";
-import { KonvaEventObject } from "konva/lib/Node";
-import { Layer, Stage } from "react-konva";
+import { KonvaEventObject, NodeConfig } from "konva/lib/Node";
+import { Layer, Rect, Stage, Transformer, Image } from "react-konva";
 import useMeasure from "react-use-measure";
 import { ToolType, toolItems } from "./Whiteboard";
-import React, { useState } from "react";
+import React from "react";
 import { nanoid } from "nanoid";
-import { Rectangle } from "@/views/konva-create";
+import useImage from "use-image";
 
 const Screen = styled("div", {
   width: "100%",
@@ -34,6 +34,88 @@ interface SquareProps {
   id: string;
   stroke: string;
 }
+
+interface RectProps {
+  shapeProps: NodeConfig;
+  isSelected: boolean;
+  onSelect: () => void;
+  onChange: (newAttributes: NodeConfig) => void;
+  draggable?: boolean;
+}
+
+export const Rectangle: React.FC<RectProps> = ({
+  shapeProps,
+  isSelected,
+  onSelect,
+  onChange,
+  draggable,
+}) => {
+  const shapeRef = React.useRef<any>();
+  const trRef = React.useRef<any>(null);
+
+  React.useEffect(() => {
+    if (isSelected) {
+      // we need to attach transformer manually
+      trRef.current.nodes([shapeRef.current]);
+      trRef.current.getLayer().batchDraw();
+    }
+  }, [isSelected]);
+
+  return (
+    <React.Fragment>
+      <Rect
+        onClick={onSelect}
+        onTap={onSelect}
+        ref={shapeRef}
+        {...shapeProps}
+        strokeWidth={4}
+        stroke={"red"}
+        fill="transparent"
+        draggable={draggable}
+        onDragEnd={(e) => {
+          onChange({
+            ...shapeProps,
+            x: e.target.x(),
+            y: e.target.y(),
+          });
+        }}
+        onTransformEnd={(e) => {
+          // transformer is changing scale of the node
+          // and NOT its width or height
+          // but in the store we have only width and height
+          // to match the data better we will reset scale on transform end
+          const node = shapeRef.current;
+          const scaleX = node.scaleX();
+          const scaleY = node.scaleY();
+
+          // we will reset it back
+          node.scaleX(1);
+          node.scaleY(1);
+          onChange({
+            ...shapeProps,
+            x: node.x(),
+            y: node.y(),
+            // set minimal value
+            width: Math.max(5, node.width() * scaleX),
+            height: Math.max(node.height() * scaleY),
+          });
+        }}
+      />
+      {isSelected && (
+        <Transformer
+          ref={trRef}
+          boundBoxFunc={(oldBox, newBox) => {
+            // limit resize
+            if (newBox.width < 5 || newBox.height < 5) {
+              return oldBox;
+            }
+            return newBox;
+          }}
+        />
+      )}
+    </React.Fragment>
+  );
+};
 
 const WhiteboardScreen: React.FC<Props> = ({ activeToolType }) => {
   /* Ref for the container to get the actual width and height to apply to the stage konva component */
@@ -69,16 +151,35 @@ const WhiteboardScreen: React.FC<Props> = ({ activeToolType }) => {
   /* Map with all the drawn shapes */
   const [shapes, setShapes] = React.useState<Record<string, SquareProps>>({});
 
+  /* State to select and deselect shape */
+  const [selectedShapeId, setSelectedShapeId] = React.useState<string | null>(
+    null
+  );
+
+  /* Image to show in the canvas */
+  const [image] = useImage("/images/world-map.png");
+
   /* onMouseDown handler for the stage */
   const onMouseDownHandler = (event: KonvaEventObject<MouseEvent>) => {
     /* Get the stage and return if it's null */
     const stage = event.target.getStage();
     if (!stage) return;
 
+    /* If the user makes a click in the stage, the selected shape must be deselected  */
+    if (stage === event.target && setSelectedShapeId) {
+      setSelectedShapeId(null);
+    }
+
     /* Detect the selected tool type */
     switch (activeToolType) {
+      /* Functionaly to select shapes */
+      case "select": {
+        break;
+      }
+
       /* Functionality to create squares */
       case "square": {
+        setSelectedShapeId(null);
         setIsDrawing(true);
 
         /* Create the new sqaure */
@@ -159,6 +260,27 @@ const WhiteboardScreen: React.FC<Props> = ({ activeToolType }) => {
     }
   };
 
+  /* onKeyDown handler */
+  const onKeyDownHandler = (event: KeyboardEvent) => {
+    if (selectedShapeId && event.key === "Backspace") {
+      setShapes((prev) => {
+        delete prev[selectedShapeId];
+
+        return prev;
+      });
+      setSelectedShapeId(null);
+    }
+  };
+
+  /* Delete the selected shape if we pressed Backspace */
+  React.useEffect(() => {
+    window.addEventListener("keydown", onKeyDownHandler);
+
+    return () => {
+      window.removeEventListener("keydown", onKeyDownHandler);
+    };
+  }, [selectedShapeId]);
+
   return (
     <Screen ref={screenRef}>
       <div
@@ -181,16 +303,32 @@ const WhiteboardScreen: React.FC<Props> = ({ activeToolType }) => {
           onMouseUp={onMouseUpHandler}
         >
           <Layer>
+            <Image
+              image={image}
+              onClick={() => {
+                if (selectedShapeId) {
+                  setSelectedShapeId(null);
+                }
+              }}
+              width={width}
+              height={height}
+            />
             {Object.values(shapes).map((item) => (
               <Rectangle
                 key={item.id}
+                draggable={item.id === selectedShapeId}
                 shapeProps={item}
-                isSelected={false}
+                isSelected={item.id === selectedShapeId}
                 onSelect={() => {
-                  // setSelectedId(shape.id);
+                  if (activeToolType !== "select") return;
+
+                  setSelectedShapeId(item.id);
                 }}
-                onChange={(newAttrs: any) => {
-                  // setShapes((prev) => ({ ...prev, [shape.id]: newAttrs }));
+                onChange={(newAttrs: NodeConfig) => {
+                  setShapes((prev) => ({
+                    ...prev,
+                    [item.id]: newAttrs as SquareProps,
+                  }));
                 }}
               />
             ))}
