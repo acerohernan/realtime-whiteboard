@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "description": "This is the main monorepo of whiteboard monorepo",
   "scripts": {
-    "frontend": "pnpm --filter=frontend"
+    "frontend": "pnpm --filter=frontend",
+    "server": "pnpm --filter=server"
   },
   "keywords": [],
   "author": "acerohernan",
